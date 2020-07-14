@@ -1,0 +1,114 @@
+#!/usr/bin/python3
+import sys
+import os
+import json
+
+def line_prepender(filename, line):
+    with open(filename, 'r+') as f:
+        content = f.read()
+        f.seek(0, 0)
+        f.write(line.rstrip('\r\n') + '\n' + content)
+
+if((os.path.exists(os.environ['HOME']+"/.config/cod/configs.json"))==False):
+  os.system("touch "+os.environ['HOME']+"/.config/cod/configs.json")
+  editor = ''
+  while editor=='':
+    print('''Please set your editor name. 
+(write the command that you use to open that editor from terminal.
+e.g: to open vim using cod just type "vim" (without quotes) and press enter: )'''
+    )
+    editor = input()
+
+  configuration = {'codeforces-enabled': 0, 'editor': editor}
+  f = open(os.environ['HOME']+'/.config/cod/configs.json', 'w')
+  json.dump(configuration,f)
+  f.close() 
+  sys.exit(0)
+
+f = open(os.environ['HOME']+'/.config/cod/configs.json', 'r')
+configuration = json.load(f)
+
+if(len(sys.argv)==1): 
+  Editor = configuration["editor"]
+  os.system(Editor)
+  sys.exit(0)
+
+if sys.argv[1] == "-showe" or sys.argv[1]=="-sete":
+  if sys.argv[1] == "-showe":
+    print(f'editor: {configuration["editor"]}')
+    sys.exit(0)
+
+  editor = ''
+  while editor=='':
+    editor = input('Please enter your editor name: ')
+  configuration["editor"] = editor
+  f = open(os.environ['HOME']+'/.config/cod/configs.json', 'w')
+  json.dump(configuration,f)
+  f.close()
+
+  if len(sys.argv)==2:
+    sys.exit(0)
+
+
+if sys.argv[1] == "-e" or sys.argv[1] == "-d" or sys.argv[1] == "-eord":
+  if(sys.argv[1]=="-e"):
+    configuration["codeforces-enabled"] = 1
+  elif(sys.argv[1]=="-eord"):
+    print(f'codeforces-enabled: {configuration["codeforces-enabled"]}')
+  else:
+    configuration["codeforces-enabled"] = 0
+  f = open(os.environ['HOME']+'/.config/cod/configs.json', 'w')
+  json.dump(configuration,f)
+  f.close()
+  sys.exit(0)
+
+strt = 1
+if sys.argv[1] == "-p" or sys.argv[1] == "-sete":
+  strt = 2
+
+
+Editor = configuration['editor']
+
+for i in range(strt,len(sys.argv)):
+    os.system("touch " + sys.argv[i])
+    lang = sys.argv[i].split('.') 
+    if sys.argv[1] == "-p" and os.path.exists(sys.argv[i]) and os.stat(sys.argv[i]).st_size != 0:
+      dirpath = os.getcwd()
+      folder_name = os.path.basename(dirpath)
+      number = lang[0].upper()
+      header = f'//https://codeforces.com/contest/{folder_name}/problem/{number}'
+      line_prepender(sys.argv[i],header)
+  
+    elif(os.path.exists(sys.argv[i]) and os.stat(sys.argv[i]).st_size != 0):
+        pass
+    else:
+        if(lang[0]==''):
+            lang = lang[1:]
+        if(len(lang)==1):
+            os.system("chmod +x " + sys.argv[i])
+            os.system(str(f'{Editor} '+ sys.argv[i]))
+        else:
+            template = os.environ['HOME'] + '/bin/template.'+ lang[-1]
+            if(os.path.exists(template) == False):
+                os.system("chmod +x " + sys.argv[i])
+                os.system(f'{Editor} '+ sys.argv[i])
+                continue  
+
+            infile = open(template,'r')
+            outfile = open(sys.argv[i],'w')
+
+            if configuration["codeforces-enabled"] == 1 or sys.argv[1]=="-p":
+              dirpath = os.getcwd()
+              folder_name = os.path.basename(dirpath)
+              number = lang[0].upper()
+              header = f'//https://codeforces.com/contest/{folder_name}/problem/{number}'
+              outfile.write(f'{header}\n')
+
+            for line in infile:
+                outfile.write(line)
+
+            infile.close()
+            outfile.close() 
+
+    os.system("chmod +x " + sys.argv[i])
+    os.system(f'{Editor} ' + sys.argv[i])

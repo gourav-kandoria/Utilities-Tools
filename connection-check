@@ -1,0 +1,29 @@
+#!/usr/bin/python3
+from ast import literal_eval
+import time
+import notify2
+import subprocess
+import os
+
+prev_connected = False
+notify2.init('Connection status')
+wait = 60
+
+while(True):
+    st = os.environ['HOME'] + '/bin/http_connectivity.sh'
+    output = subprocess.check_output(st) 
+    output = literal_eval("{}".format(output)).decode('utf8')
+
+    if (prev_connected and output=="The network is down or very slow\n"):
+        n = notify2.Notification('Connection Status', output)
+        n.show()
+        prev_connected = False
+        wait = 5
+        
+    elif(prev_connected==False and output == "HTTP connectivity is up\n"):
+        n = notify2.Notification('Connection Status', output)
+        n.show()
+        prev_connected = True 
+        wait = 60
+
+    time.sleep(wait)
